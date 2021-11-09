@@ -6,8 +6,8 @@
 #include <sstream>
 #include<string.h>
 using namespace std;
-enum term_type {
-	t_const,
+enum term_type {//типы термов: константа, переменна€, операци€ (между переменными, слева или справа), открывающа€ и закрывающа€ скобка, функци€
+	t_const,	//t_zero нужно дл€ первой функции, дл€ второй нет
 	t_var,
 	t_opbl,
 	t_clbl,
@@ -111,18 +111,18 @@ vector<term> MakeTerm(string Expression) {
 	}
 	return Ans;
 }
-void split(string const& str, const char delim,	vector<std::string>& out)
+void split(string const& str, const char delim,	vector<std::string>& out)//мо€ функци€ разделени€ строки 
 {
 	stringstream ss(str);
 	string s;
-	while (std::getline(ss, s, delim)) {
+	while (getline(ss, s, delim)) {
 		out.push_back(s);
 	}
 }
 vector<term> MakeTerm2(string expression) {
 	vector<term> Ans;
 	vector<string> BodyAns;
-	split(expression, ' ',BodyAns);
+	split(expression, ' ',BodyAns);//разбиение
 	term PartAns;
 	term_type Type;
 	for (int i = 0; i < BodyAns.size(); i++) {
@@ -136,11 +136,11 @@ vector<term> MakeTerm2(string expression) {
 		if (isdigit(BodyAns[i][0])) {
 			Type = t_const;
 		}
-		if (Opbl.find(BodyAns[i][0]) != Opbl.end()) {
-			if (i > 0 && Ans[i - 1].type == t_var) {
+		if (Opbl.find(BodyAns[i][0]) != Opbl.end()) { 
+			if (i > 0 && Ans[i - 1].type == t_var) { //если перед скобкой переменна€ это функци€
 				Ans[i - 1].type = t_fun;
 			}
-			if (i > 0 && Ans[i - 1].type == t_op) {
+			if (i > 0 && Ans[i - 1].type == t_op) { // если перед скобкой операци€ то...
 				Ans[i - 1].type = t_opl;
 			}
 			if (i > 0 && Ans[i - 1].type == t_opr) {
@@ -172,7 +172,7 @@ vector<term> MakeTerm2(string expression) {
 	}
 	return Ans;
 }
-int InfoPriority(term a) {
+int InfoPriority(term a) {//функци€ дл€ возращени€ приоритета
 	for (int i = 0; i < Operations.size(); i++) {
 		if (a.body == Operations[i].body && a.type == Operations[i].type) {
 			return Operations[i].priority;
@@ -189,23 +189,24 @@ int TopStackPriority(stack<int> a) {
 	}
 }
 vector<term> PolskaNotation(vector<term> Terms) {
-	stack<int> SPriority;
+	stack<int> SPriority;//стек приоритетов терм в конец стека  S соответсвует приоритету в конце данного стека
 	stack<term> S;
 	vector<term> out;
 	for (int i = 0; i < Terms.size(); i++) {
 		if (Terms[i].type == t_fun) {
 			S.push(Terms[i]);
-			SPriority.push(10);
+			SPriority.push(10); // приоритет у функции 10
 		}
 		if (Terms[i].type == t_opbl) {
 			S.push(Terms[i]);
-			SPriority.push(0);
+			SPriority.push(0); //у скобки 0
 		}
 		if (Terms[i].type == t_const || Terms[i].type == t_var) {
-			out.push_back(Terms[i]);
+			out.push_back(Terms[i]); //вывод в out переменных и констант
 		}
-		if (Terms[i].type == t_op || Terms[i].type == t_opl || Terms[i].type == t_opr) {
-			int Priority = InfoPriority(Terms[i]);
+		if (Terms[i].type == t_op || Terms[i].type == t_opl || Terms[i].type == t_opr) {//если приоритет в строке больше 
+			//то заносим в стеки
+			int Priority = InfoPriority(Terms[i]);			//иначе убираем из стеков пока приоритет в строке не станет больше
 			int TopStack = TopStackPriority(SPriority);
 			while (Priority <= TopStack) {
 				out.push_back(S.top());
@@ -218,7 +219,7 @@ vector<term> PolskaNotation(vector<term> Terms) {
 				SPriority.push(Priority);
 			}
 		}
-		if (Terms[i].type == t_clbl) {
+		if (Terms[i].type == t_clbl) { //если закрывающа€ то переносим из стека в out, потом удал€ем скобку
 			while (S.top().type != t_opbl) {
 				out.push_back(S.top());
 				S.pop();
@@ -228,14 +229,14 @@ vector<term> PolskaNotation(vector<term> Terms) {
 			SPriority.pop();
 		}
 	}
-	while (!S.empty()) {
+	while (!S.empty()) { //после алгоритма выносим остатки из стека
 		out.push_back(S.top());
 		S.pop();
 		SPriority.pop();
 	}
 	return out;
 }
-vector<term> WriteVar(vector<term> PolNot) {
+vector<term> WriteVar(vector<term> PolNot) { //замен€ем переменные на константы
 	for (int i = 0; i < PolNot.size(); i++) {
 		if (PolNot[i].type == t_var) {
 			cout << "Write var " << PolNot[i].body<<endl;
@@ -252,13 +253,13 @@ vector<term> WriteVar(vector<term> PolNot) {
 	}
 	return PolNot;
 }
-float CalculationPolskaNotation(vector<term> PolNot) {
+float CalculationPolskaNotation(vector<term> PolNot) {//вычисление
 	stack<float> S;
-	for (int i = 0; i < PolNot.size(); i++) {
-		if (PolNot[i].type == t_const) {
+	for (int i = 0; i < PolNot.size(); i++) { 
+		if (PolNot[i].type == t_const) { //константа сразу заноситс€ в стек
 			S.push(atof(PolNot[i].body.c_str()));
 		}
-		if (PolNot[i].type == t_opl) {
+		if (PolNot[i].type == t_opl) { //если операци€ левосторонн€€
 			float Top = S.top();
 			S.pop();
 			if(PolNot[i].body=="!"){
@@ -269,7 +270,7 @@ float CalculationPolskaNotation(vector<term> PolNot) {
 			}
 			S.push(Top);
 		}
-		if (PolNot[i].type == t_opr) {
+		if (PolNot[i].type == t_opr) { //если операци€ правосторонн€€
 			float Top = S.top();
 			S.pop();
 			if (PolNot[i].body == "!") {
@@ -281,7 +282,7 @@ float CalculationPolskaNotation(vector<term> PolNot) {
 			}
 			S.push(Top);
 		}
-		if (PolNot[i].type == t_op) {
+		if (PolNot[i].type == t_op) { //если операци€ между переменными
 			float Top = S.top();
 			S.pop();
 			float Top2 = S.top();
@@ -319,7 +320,7 @@ float CalculationPolskaNotation(vector<term> PolNot) {
 			}
 			S.push(Ans);
 		}
-		if (PolNot[i].type = t_fun) {
+		if (PolNot[i].type == t_fun) { //если функци€
 			if (PolNot[i].body == "sin") {
 				float Top = S.top();
 				S.pop();
@@ -348,7 +349,7 @@ int main()
 {
 	string s = "- abc - b ! * ! sin ( x - ( y / z - exp ( 3.15 * x ) ) )";
 	string s1 = "( abc + 123 ) / 2";
-	vector<term> Ans = MakeTerm2(s1);
+	vector<term> Ans = MakeTerm2(s);
 	for (term& t : Ans) {
 		cout << t.body<<" "<<t.type<< endl;
 	}
